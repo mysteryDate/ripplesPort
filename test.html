@@ -28,15 +28,17 @@
 	    uniform sampler2D _mainTex;
 	    uniform vec2 _hiPoint;
 	    uniform vec2 _iResolution;
+	    uniform float _mouseDown;
 	    uniform vec2 uv;
 
 	    void main() {
-	    	// float distx = smoothstep(1., 0., length(_hiPoint.x - gl_FragCoord.x / _iResolution.x));
-	    	// float disty = smoothstep(1., 0., abs(_hiPoint.y - gl_FragCoord.y / _iResolution.y));
-	    	float dist = smoothstep(20.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
-	        // gl_FragColor = texture2D( _mainTex, vUv );// + vec4(1.,1.,1.,1.) * dist;
-	        gl_FragColor = vec4(dist,dist,dist,1.);
-	        // gl_FragColor = vec4(vUv.xy,0.,1.);
+	    	if(_mouseDown > 0.5) {
+		    	float dist = smoothstep(20.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
+		        gl_FragColor = vec4(dist,dist,dist,1.);
+		    }
+		    else {
+		    	gl_FragColor = vec4(0.,0.,0.,0.);
+		    }
 	    }
 	</script>
 
@@ -67,7 +69,7 @@
         	uniforms: {
         		_mainTex: { value: tex1.texture },
         		_hiPoint: { value: new THREE.Vector2(0., 0.)},
-        		_iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight)}
+        		_mouseDown: {value: 1.}
         	},
         	vertexShader: document.getElementById('vertex-shader').textContent,
         	fragmentShader: document.getElementById('fragment-shader-simple').textContent
@@ -87,11 +89,16 @@
         	renderer.render(scene, camera);
         }
 
-        canvas.onclick = function(e) {
+        canvas.onmousedown = function(e) {
         	console.log(e);
         	distMaterial.uniforms._hiPoint.value = new THREE.Vector2(
         		e.clientX, window.innerHeight - e.clientY
         	);
+        	distMaterial.uniforms._mouseDown.value = 1.0;
+        }
+        canvas.onmouseup = function(e) {
+        	console.log(e);
+        	distMaterial.uniforms._mouseDown.value = 0.0;
         }
         render();
 	</script>
