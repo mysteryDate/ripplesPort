@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>TESTTING!</title>
-	<script src="stats.min.js"></script>
+    <title>TESTTING!</title>
+    <script src="stats.min.js"></script>
     <script src="dat.gui.js"></script>
 
     <script src="three.r78.js"></script>
@@ -12,72 +12,74 @@
             padding: 0;
         }
         canvas {
-        	width: 50px;
+            width: 50px;
         }
     </style>
 </head>
 <body>
 
-	<script id="vertex-shader" type="x-shader/x-vertex">
-	    varying vec2 vUv;
-	    void main() {
-	    	vUv = uv;
-	        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-	    }
-	</script>
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }
+    </script>
 
-	<script id="fragment-shader-simple" type="x-shader/x-fragment">
-	    uniform sampler2D _mainTex;
-	    varying vec2 vUv;
+    <script id="fragment-shader-simple" type="x-shader/x-fragment">
+        uniform sampler2D _mainTex;
+        varying vec2 vUv;
 
-	    void main() {
-	    	vec4 inTex = texture2D(_mainTex, vUv);
-	    	gl_FragColor = inTex;
-	    }
-	</script>
+        void main() {
+            vec4 inTex = texture2D(_mainTex, vUv);
+            gl_FragColor = inTex;
+        }
+    </script>
 
-	<script id="fragment-shader-pingpong" type="x-shader/x-fragment">
-	    uniform sampler2D _mainTex;
-	    uniform vec2 _hiPoint;
-	    uniform vec2 _iResolution;
-	    uniform float _mouseDown;
-        uniform float _scale;
+    <script id="fragment-shader-pingpong" type="x-shader/x-fragment">
+        uniform sampler2D _mainTex;
+        uniform sampler2D _backBuffer;
+        uniform vec2 _hiPoint;
+        uniform vec2 _iResolution;
+        uniform vec3 _color;
+        uniform float _mouseDown;
+        uniform float _damping;
         uniform float _pow;
-	    varying vec2 vUv;
+        varying vec2 vUv;
 
         vec2 offset[4];
 
-	    void main() {
+        void main() {
 
             offset[0] = vec2(-1.0,0.0);
             offset[1] = vec2(1.0,0.0);
             offset[2] = vec2(0.0,1.0);
             offset[3] = vec2(0.0,-1.0);
-            float sum = 0.;
+            vec4 sum = vec4(0.,0.,0.,0.);
             for(int i = 0; i < 4; i++) {
-                sum += texture2D(_mainTex, vUv + offset[i] / _iResolution.xy).r;
+                sum += texture2D(_mainTex, vUv + offset[i] / _iResolution.xy * _pow);
             }
             // sum = (sum - 2.0) - (texture2D(iChannel1, uv).r - 0.5) * 2.;
-            sum *= 1.001;
-            sum *= 0.25;
+            // sum = (sum - 2.0) - (texture2D(_backBuffer, vUv).r - 0.5) * 2.;
+            sum *= _damping * 0.25;
+            // sum = sum/2.0 + 0.5;
             // sum = sum/2.0 + 0.5;
 
             float dist = 0.;
-	    	if(_mouseDown > 0.5) 
+            if(_mouseDown > 0.5) 
             {
-                dist = pow(1./length((gl_FragCoord.xy - _hiPoint.xy) / _iResolution.x) / _scale, _pow);
-		    	// dist = smoothstep(40.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
+                dist = pow(1./length((gl_FragCoord.xy - _hiPoint.xy) / _iResolution.x) / 50., _pow);
+                // dist = smoothstep(40.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
             }
-	    	vec4 inTex = texture2D(_mainTex, vUv);
-	    	// gl_FragColor = vec4(1.,1.,1.,1.) * (dist + sum);
-            gl_FragColor = vec4(vec3(1.0,1.0,1.0) * dist + inTex.xyz,1.0) * 0.95;
-	    }
-	</script>
+            gl_FragColor = vec4(_color * dist, 1.) + sum;
+            // gl_FragColor = vec4(vec3(1.0,1.0,1.0) * dist + inTex.xyz,1.0) * 0.95;
+        }
+    </script>
 
-	<script type="text/javascript">
-		var canvas = document.createElement('canvas');
-		document.body.appendChild(canvas);
-		var stats = new Stats();
+    <script type="text/javascript">
+        var canvas = document.createElement('canvas');
+        document.body.appendChild(canvas);
+        var stats = new Stats();
         document.body.appendChild(stats.domElement);
 
         var renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
@@ -105,16 +107,18 @@
         // For ping-ponging
         var tex2 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, textureOptions );
         var pingpongMaterial = new THREE.ShaderMaterial( {
-        	uniforms: {
-        		_mainTex: { value: tex1.texture },
-        		_hiPoint: { value: new THREE.Vector2(-100., -100.)},
-        		_mouseDown: {value: 0.},
+            uniforms: {
+                _mainTex: { value: tex1.texture },
+                _backBuffer: { value: tex2.texture },
+                _hiPoint: { value: new THREE.Vector2(-100., -100.)},
+                _mouseDown: {value: 0.},
                 _iResolution: { value: new THREE.Vector2(window.innerWidth,window.innerHeight)},
-                _scale: {value: 100.},
-                _pow: {value: 2.}
-        	},
-        	vertexShader: document.getElementById('vertex-shader').textContent,
-        	fragmentShader: document.getElementById('fragment-shader-pingpong').textContent
+                _damping: {value: 0.99},
+                _pow: {value: 2.},
+                _color: {value: new THREE.Color("#ffffff")}
+            },
+            vertexShader: document.getElementById('vertex-shader').textContent,
+            fragmentShader: document.getElementById('fragment-shader-pingpong').textContent
         });
         var dummyScene = new THREE.Scene();
         var dummyQuad = new THREE.Mesh(plane,pingpongMaterial);
@@ -133,28 +137,32 @@
         scene.add( quad );
 
         var controller = {
-            scale: 100.,
-            pow: 2.
+            damping: 0.99,
+            pow: 2.5,
+            color: "#ffffff"
         }
-        gui.add(controller, "scale", 0.,200.).listen();
+        gui.add(controller, "damping", 0.9,1.01).listen();
         gui.add(controller, "pow", 0.,10.).listen();
+        gui.addColor(controller, "color").listen();
         function render() 
         {
-        	requestAnimationFrame(render);
+            requestAnimationFrame(render);
             stats.update();
-            pingpongMaterial.uniforms._scale.value = controller.scale;
+            pingpongMaterial.uniforms._damping.value = controller.damping;
             pingpongMaterial.uniforms._pow.value = controller.pow;
+            pingpongMaterial.uniforms._color.value = new THREE.Color(controller.color);
             renderer.render(dummyScene, cameraRTT, tex1);
             // Ping pong!
             var a = tex2;
             tex2 = tex1;
             tex1 = a;
             pingpongMaterial.uniforms._mainTex.value = tex2.texture;
-        	renderer.render(scene, camera);
+            pingpongMaterial.uniforms._backBuffer.value = tex1.texture;
+            renderer.render(scene, camera);
         }
 
         canvas.onmousedown = function(e) {
-        	pingpongMaterial.uniforms._mouseDown.value = 1.0;
+            pingpongMaterial.uniforms._mouseDown.value = 1.0;
         }
         canvas.onmousemove = function(e) {
             pingpongMaterial.uniforms._hiPoint.value = new THREE.Vector2(
@@ -162,10 +170,10 @@
             );
         }
         canvas.onmouseup = function(e) {
-        	pingpongMaterial.uniforms._mouseDown.value = 0.0;
+            pingpongMaterial.uniforms._mouseDown.value = 0.0;
         }
         render();
-	</script>
+    </script>
 
 </body>
 </html>
