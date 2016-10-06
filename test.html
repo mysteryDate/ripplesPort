@@ -68,6 +68,7 @@
 
         var gui = new dat.GUI();
 
+        var plane = new THREE.PlaneBufferGeometry( window.innerWidth, window.innerHeight );
         var camera = new THREE.PerspectiveCamera(90, window.innerWidth/window.innerHeight, 0.1, 2000);
         camera.position.z = 300;
         // Separate camera for render to texture
@@ -78,6 +79,17 @@
         // For ping-ponging
         var tex2 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat, depthBuffer: false,
             stencilBuffer: false } );
+        var pingpongMaterial = new THREE.ShaderMaterial( {
+        	uniforms: {
+        		_mainTex: { value: tex1.texture },
+        		_hiPoint: { value: new THREE.Vector2(0., 0.)},
+        		_mouseDown: {value: 1.}
+        	},
+        	vertexShader: document.getElementById('vertex-shader').textContent,
+        	fragmentShader: document.getElementById('fragment-shader-pingpong').textContent
+        });
+        var dummyScene = new THREE.Scene();
+        var dummyQuad = new THREE.Mesh(plane,pingpongMaterial);
 
         var distMaterial = new THREE.ShaderMaterial( {
         	uniforms: {
@@ -91,15 +103,13 @@
         // var rippleMaterial = new 
 
         var scene = new THREE.Scene();
-        var plane = new THREE.PlaneBufferGeometry( window.innerWidth, window.innerHeight );
-        var quad = new THREE.Mesh( plane, distMaterial );
+        var quad = new THREE.Mesh( plane, pingpongMaterial );
         scene.add( quad );
 
         var startTime = Date.now()/1000.;
         function render() 
         {
         	requestAnimationFrame(render);
-
         	renderer.render(scene, camera);
         }
 
@@ -111,7 +121,6 @@
         	distMaterial.uniforms._mouseDown.value = 1.0;
         }
         canvas.onmouseup = function(e) {
-        	console.log(e);
         	distMaterial.uniforms._mouseDown.value = 0.0;
         }
         render();
