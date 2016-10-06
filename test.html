@@ -85,7 +85,7 @@
 	    	if(_mouseDown > 0.5) 
             {
                 // dist = pow(1./length((gl_FragCoord.xy - _hiPoint.xy) / _iResolution.x) / 50., 2.);
-		    	dist = smoothstep(40.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
+		    	dist = smoothstep(4.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
             }
 
             gl_FragColor = vec4(sum + dist * vec3(1.,1.,1.), 1.);
@@ -184,18 +184,33 @@
             pingpongMaterial.uniforms._color.value = new THREE.Color(controller.color);
             pingpongMaterial.uniforms._frame.value = frame;
 
-            //copy tex2 to dummyTex
-            basicMaterial.uniforms._mainTex.value = tex2.texture;
-            renderer.render(scene, camera, dummyTex);
-            pingpongMaterial.uniforms._mainTex.value = tex1.texture;
-            pingpongMaterial.uniforms._backBuffer.value = dummyTex.texture;
-            renderer.render(dummyScene, cameraRTT, tex2);
-            // copy tex1 to dummyTex
-            basicMaterial.uniforms._mainTex.value = tex1.texture;
-            renderer.render(scene, camera, dummyTex);
+            // Let's try ping-ponging again
+            // Main pong, render tex2 and dummyText(from tex 1) to tex1
+            renderer.render(dummyScene, cameraRTT, tex1);
+
+            // swap tex1 and tex2
+            var a = tex2;
+            tex2 = tex1;
+            tex1 = a;
             pingpongMaterial.uniforms._mainTex.value = tex2.texture;
             pingpongMaterial.uniforms._backBuffer.value = dummyTex.texture;
-            renderer.render(dummyScene, cameraRTT, tex1);
+
+            // Copy tex1 to dummytext
+            basicMaterial.uniforms._mainTex.value = tex1.texture;
+            renderer.render(scene, camera, dummyTex);
+
+            // //copy tex2 to dummyTex
+            // basicMaterial.uniforms._mainTex.value = tex2.texture;
+            // renderer.render(scene, camera, dummyTex);
+            // pingpongMaterial.uniforms._mainTex.value = tex1.texture;
+            // pingpongMaterial.uniforms._backBuffer.value = dummyTex.texture;
+            // renderer.render(dummyScene, cameraRTT, tex2);
+            // // copy tex1 to dummyTex
+            // basicMaterial.uniforms._mainTex.value = tex1.texture;
+            // renderer.render(scene, camera, dummyTex);
+            // pingpongMaterial.uniforms._mainTex.value = tex2.texture;
+            // pingpongMaterial.uniforms._backBuffer.value = dummyTex.texture;
+            // renderer.render(dummyScene, cameraRTT, tex1);
 
             // Ping pong!
             // var a = tex2;
