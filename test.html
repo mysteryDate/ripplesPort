@@ -41,6 +41,8 @@
 	    uniform vec2 _hiPoint;
 	    uniform vec2 _iResolution;
 	    uniform float _mouseDown;
+        uniform float _scale;
+        uniform float _pow;
 	    varying vec2 vUv;
 
         vec2 offset[4];
@@ -63,7 +65,7 @@
             float dist = 0.;
 	    	if(_mouseDown > 0.5) 
             {
-                dist = 1./length((gl_FragCoord.xy - _hiPoint.xy) / _iResolution.x) / 100.0;
+                dist = pow(1./length((gl_FragCoord.xy - _hiPoint.xy) / _iResolution.x) / _scale, _pow);
 		    	// dist = smoothstep(40.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
             }
 	    	vec4 inTex = texture2D(_mainTex, vUv);
@@ -107,7 +109,9 @@
         		_mainTex: { value: tex1.texture },
         		_hiPoint: { value: new THREE.Vector2(-100., -100.)},
         		_mouseDown: {value: 0.},
-                _iResolution: { value: new THREE.Vector2(window.innerWidth,window.innerHeight)}
+                _iResolution: { value: new THREE.Vector2(window.innerWidth,window.innerHeight)},
+                _scale: {value: 100.},
+                _pow: {value: 2.}
         	},
         	vertexShader: document.getElementById('vertex-shader').textContent,
         	fragmentShader: document.getElementById('fragment-shader-pingpong').textContent
@@ -128,11 +132,18 @@
         var quad = new THREE.Mesh( plane, basicMaterial );
         scene.add( quad );
 
-        var startTime = Date.now()/1000.;
+        var controller = {
+            scale: 100.,
+            pow: 2.
+        }
+        gui.add(controller, "scale", 0.,200.).listen();
+        gui.add(controller, "pow", 0.,10.).listen();
         function render() 
         {
         	requestAnimationFrame(render);
             stats.update();
+            pingpongMaterial.uniforms._scale.value = controller.scale;
+            pingpongMaterial.uniforms._pow.value = controller.pow;
             renderer.render(dummyScene, cameraRTT, tex1);
             // Ping pong!
             var a = tex2;
@@ -143,10 +154,12 @@
         }
 
         canvas.onmousedown = function(e) {
-        	pingpongMaterial.uniforms._hiPoint.value = new THREE.Vector2(
-        		e.clientX, window.innerHeight - e.clientY
-        	);
         	pingpongMaterial.uniforms._mouseDown.value = 1.0;
+        }
+        canvas.onmousemove = function(e) {
+            pingpongMaterial.uniforms._hiPoint.value = new THREE.Vector2(
+                e.clientX, window.innerHeight - e.clientY
+            );
         }
         canvas.onmouseup = function(e) {
         	pingpongMaterial.uniforms._mouseDown.value = 0.0;
