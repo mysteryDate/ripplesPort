@@ -19,24 +19,38 @@
 <body>
 
 	<script id="vertex-shader" type="x-shader/x-vertex">
+	    varying vec2 vUv;
 	    void main() {
+	    	vUv = uv;
 	        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 	    }
 	</script>
 
 	<script id="fragment-shader-simple" type="x-shader/x-fragment">
 	    uniform sampler2D _mainTex;
+	    varying vec2 vUv;
+
+	    void main() {
+	    	vec4 inTex = texture2D(_mainTex, vUv);
+	    	gl_FragColor = inTex;
+	    }
+	</script>
+
+	<script id="fragment-shader-pingpong" type="x-shader/x-fragment">
+	    uniform sampler2D _mainTex;
 	    uniform vec2 _hiPoint;
 	    uniform vec2 _iResolution;
 	    uniform float _mouseDown;
-	    uniform vec2 uv;
+	    varying vec2 vUv;
 
 	    void main() {
 	    	if(_mouseDown > 0.5) {
 		    	float dist = smoothstep(20.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
-		        gl_FragColor = vec4(dist,dist,dist,1.);
+		        gl_FragColor = vec4(vUv.xy,dist,1.);
 		    }
 		    else {
+		    	vec4 inTex = texture2D(_mainTex, gl_FragCoord.xy / _iResolution.xy);
+		    	gl_FragColor = inTex;
 		    	gl_FragColor = vec4(0.,0.,0.,0.);
 		    }
 	    }
