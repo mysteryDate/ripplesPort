@@ -46,7 +46,7 @@
 	    void main() {
 	    	if(_mouseDown > 0.5) {
 		    	float dist = smoothstep(20.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
-		        gl_FragColor = vec4(vUv.xy,dist,1.);
+		        gl_FragColor = vec4(dist,dist,dist,1.);
 		    }
 		    else {
 		    	vec4 inTex = texture2D(_mainTex, vUv) * 0.9;
@@ -68,8 +68,9 @@
         var gui = new dat.GUI();
 
         var plane = new THREE.PlaneBufferGeometry( window.innerWidth, window.innerHeight );
-        var camera = new THREE.PerspectiveCamera(90, window.innerWidth/window.innerHeight, 0.1, 2000);
-        camera.position.z = 300;
+        var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -10000, 10000 );
+        //new THREE.PerspectiveCamera(90, window.innerWidth/window.innerHeight, 0.1, 2000);
+        //camera.position.z = 500;
         // Separate camera for render to texture
         var cameraRTT = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -10000, 10000 );
         // Texture to render to
