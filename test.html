@@ -63,10 +63,12 @@
             float dist = 0.;
 	    	if(_mouseDown > 0.5) 
             {
-		    	dist = smoothstep(40.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
+                dist = 1./length((gl_FragCoord.xy - _hiPoint.xy) / _iResolution.x) / 100.0;
+		    	// dist = smoothstep(40.,0.,length(_hiPoint.xy - gl_FragCoord.xy));
             }
-	    	vec4 inTex = texture2D(_mainTex, vUv) * 0.95;
-	    	gl_FragColor = vec4(1.,1.,1.,1.) * (dist + sum);
+	    	vec4 inTex = texture2D(_mainTex, vUv);
+	    	// gl_FragColor = vec4(1.,1.,1.,1.) * (dist + sum);
+            gl_FragColor = vec4(vec3(1.0,1.0,1.0) * dist + inTex.xyz,1.0) * 0.95;
 	    }
 	</script>
 
@@ -89,16 +91,22 @@
         // Separate camera for render to texture
         var cameraRTT = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -10000, 10000 );
         // Texture to render to
-        var tex1 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat, depthBuffer: false,
-            stencilBuffer: false } );
+        var textureOptions = {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat,
+            depthBuffer: false,
+            stencilBuffer: false,
+            type: THREE.FloatType 
+        }
+        var tex1 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, textureOptions );
         // For ping-ponging
-        var tex2 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat, depthBuffer: false,
-            stencilBuffer: false } );
+        var tex2 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, textureOptions );
         var pingpongMaterial = new THREE.ShaderMaterial( {
         	uniforms: {
         		_mainTex: { value: tex1.texture },
         		_hiPoint: { value: new THREE.Vector2(-100., -100.)},
-        		_mouseDown: {value: 1.},
+        		_mouseDown: {value: 0.},
                 _iResolution: { value: new THREE.Vector2(window.innerWidth,window.innerHeight)}
         	},
         	vertexShader: document.getElementById('vertex-shader').textContent,
